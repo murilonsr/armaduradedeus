@@ -130,7 +130,7 @@ video{display:none}
     </div>
   </div>
   <div id="recTime">● 00:00</div>
-  <div id="status"><div class="t" id="stT">Posicionem-se diante da câmera</div><div class="s" id="stS">Até duas pessoas, com o tronco aparecendo</div></div>
+  <div id="status"><div class="t" id="stT">Posicionem-se diante da câmera</div><div class="s" id="stS">Até seis pessoas, com o tronco aparecendo</div></div>
 
   <div id="guide" class="hidden">
     <h3>ORAÇÃO GUIA</h3>
@@ -202,7 +202,8 @@ import { FilesetResolver, PoseLandmarker } from "https://cdn.jsdelivr.net/npm/@m
 const FACE_MODELS = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model/";
 const MP_WASM = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
 const POSE_MODEL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
-const MATCH_DIST = 0.5;          // distância facial para reconhecer a mesma pessoa
+const MATCH_DIST = 0.5;
+const MAX_PEOPLE = 6;          // distância facial para reconhecer a mesma pessoa
 const PRE_CAP = 0.8;             // quanto a armadura forma antes da declaração
 const STORE_KEY = "armadura.v1";
 const PIECES = ["wings","chest","arms","belt","helmet","boots","shield","sword"];
@@ -269,8 +270,8 @@ async function openCamera(){
 }
 async function loadPose(){
   const fs = await FilesetResolver.forVisionTasks(MP_WASM);
-  const opts = d => ({ baseOptions:{ modelAssetPath:POSE_MODEL, delegate:d }, runningMode:"VIDEO", numPoses:2,
-    minPoseDetectionConfidence:.5, minPosePresenceConfidence:.5, minTrackingConfidence:.5 });
+  const opts = d => ({ baseOptions:{ modelAssetPath:POSE_MODEL, delegate:d }, runningMode:"VIDEO", numPoses:6,
+    minPoseDetectionConfidence:.45, minPosePresenceConfidence:.45, minTrackingConfidence:.5 });
   try{ poseLm = await PoseLandmarker.createFromOptions(fs, opts("GPU")); }
   catch(e){ poseLm = await PoseLandmarker.createFromOptions(fs, opts("CPU")); }
 }
@@ -304,19 +305,21 @@ const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 
 /* ===================== Tracking ===================== */
 function updateTracks(results, now){
-  const poses = (results && results.landmarks) || [];
-  const used = new Set();
-  for(const lms of poses){
-    const anchor = { x:(lms[11].x+lms[12].x)/2, y:(lms[11].y+lms[12].y)/2 };
-    let best=null, bd=.25;
-    for(const t of tracks){ if(used.has(t)) continue; const d=dist(anchor,t.anchor); if(d<bd){bd=d;best=t;} }
-    if(!best){ best = { id:nextTrackId++, lm:null, anchor, personId:null, descs:[], born:now, fixedSince:0, thumb:null, sealedHere:false }; tracks.push(best); }
-    used.add(best);
+  const poses = ((results && results.landmarks) || []).slice(0, MAX_PEOPLE);
+  const anchors = poses.map(l => ({ x:(l[11].x+l[12].x)/2, y:(l[11].y+l[12].y)/2, w:Math.hypot(l[11].x-l[12].x,l[11].y-l[12].y) }));
+  const pairs=[];
+  anchors.forEach((a,i)=>tracks.forEach(t=>{ const d=dist(a,t.anchor); if(d < Math.max(.08, a.w*1.2)) pairs.push({i,t,d}); }));
+  pairs.sort((a,b)=>a.d-b.d);
+  const usedP=new Set(), usedT=new Set(), match=new Map();
+  for(const p of pairs){ if(usedP.has(p.i)||usedT.has(p.t)) continue; usedP.add(p.i); usedT.add(p.t); match.set(p.i,p.t); }
+  poses.forEach((lms,i)=>{
+    let best = match.get(i);
+    if(!best){ best = { id:nextTrackId++, lm:null, anchor:anchors[i], personId:null, descs:[], born:now, fixedSince:0, thumb:null, sealedHere:false }; tracks.push(best); }
     const k = best.lm ? .55 : 1;
-    best.lm = lms.map((p,i)=>{ const o = best.lm ? best.lm[i] : p; const v=p.visibility??1;
+    best.lm = lms.map((p,j)=>{ const o = best.lm ? best.lm[j] : p; const v=p.visibility??1;
       return { x:lerp(o.x,p.x,k), y:lerp(o.y,p.y,k), v:lerp(o.v??v,v,.5) }; });
-    best.anchor = anchor; best.lastSeen = now;
-  }
+    best.anchor = anchors[i]; best.lastSeen = now;
+  });
   tracks = tracks.filter(t => now - t.lastSeen < 900);
 }
 
@@ -328,14 +331,16 @@ async function faceLoop(){
     faceBusy = true;
     try{
       const f = window.faceapi;
-      const dets = await f.detectAllFaces(video, new f.TinyFaceDetectorOptions({ inputSize:320, scoreThreshold:.5 })).withFaceLandmarks(true).withFaceDescriptors();
+      const dets = await f.detectAllFaces(video, new f.TinyFaceDetectorOptions({ inputSize:416, scoreThreshold:.45 })).withFaceLandmarks(true).withFaceDescriptors();
       const vw=video.videoWidth, vh=video.videoHeight;
+      const takenT = new Set();
       for(const d of dets){
         const b = d.detection.box;
         const cx=(b.x+b.width/2)/vw, cy=(b.y+b.height/2)/vh, r=Math.max(b.width/vw,b.height/vh);
         let best=null, bd=r*1.1;
-        for(const t of tracks){ if(!t.lm) continue; const n=t.lm[0]; const dd=Math.hypot(n.x-cx,n.y-cy); if(dd<bd){bd=dd;best=t;} }
+        for(const t of tracks){ if(!t.lm || takenT.has(t)) continue; const n=t.lm[0]; const dd=Math.hypot(n.x-cx,n.y-cy); if(dd<bd){bd=dd;best=t;} }
         if(!best) continue;
+        takenT.add(best);
         best.descs.push(Array.from(d.descriptor)); if(best.descs.length>6) best.descs.shift();
         best.thumb = cropThumb(b);
         identify(best, d.descriptor);
@@ -347,7 +352,8 @@ async function faceLoop(){
 }
 function identify(t, desc){
   let best=null, bd=MATCH_DIST;
-  for(const p of db.people){ for(const q of p.descriptors){ let s=0; for(let i=0;i<128;i++){ const z=desc[i]-q[i]; s+=z*z; } const d=Math.sqrt(s); if(d<bd){bd=d;best=p;} } }
+  const busy = new Set(tracks.filter(o=>o!==t && o.personId).map(o=>o.personId));
+  for(const p of db.people){ if(busy.has(p.id)) continue; for(const q of p.descriptors){ let s=0; for(let i=0;i<128;i++){ const z=desc[i]-q[i]; s+=z*z; } const d=Math.sqrt(s); if(d<bd){bd=d;best=p;} } }
   if(best && t.personId!==best.id){
     t.personId = best.id;
     if(hasToday(best) && !t.fixedSince){ t.fixedSince = performance.now(); chime(.5); }
@@ -424,7 +430,7 @@ function resetSession(){
   session.active=false; session.done=false; session.declaring=false;
   for(const p of PIECES){ session.target[p]=0; }
   $("mainBtn").textContent = "Começar oração"; $("declBtn").classList.add("hidden"); $("transcript").textContent="";
-  setStatus("Posicionem-se diante da câmera","Até duas pessoas, com o tronco aparecendo");
+  setStatus("Posicionem-se diante da câmera","Até seis pessoas, com o tronco aparecendo");
 }
 function declare(){
   if(!session.active || session.declaring || session.done) return;
@@ -556,7 +562,7 @@ $("recShare").onclick = async () => {
 
 /* ===================== Particles ===================== */
 function spawnBurst(piece){
-  for(const t of tracks){ if(!t.lm) continue; for(let i=0;i<14;i++) particles.push({ t, mode:"in", piece, life:0, max:900+Math.random()*700, a:Math.random()*Math.PI*2, r:1.6+Math.random()*1.4, seed:Math.random() }); }
+  for(const t of tracks){ if(!t.lm) continue; const n = tracks.length>3 ? 7 : 14; for(let i=0;i<n;i++) particles.push({ t, mode:"in", piece, life:0, max:900+Math.random()*700, a:Math.random()*Math.PI*2, r:1.6+Math.random()*1.4, seed:Math.random() }); }
 }
 
 /* ===================== Main loop ===================== */
@@ -585,7 +591,7 @@ function loop(now){
     if(!tracks.length) setStatusIdle(false); else setStatusIdle(true);
   }
 
-  for(const t of tracks) if(t.lm) drawTrack(t, cr, now, dt);
+  drawAll(cr, now, dt);
   drawFlashes(now);
 }
 let idleShown=null;
@@ -593,7 +599,7 @@ function setStatusIdle(hasPeople){
   if(session.active || session.done) return;
   if(idleShown===hasPeople) return; idleShown=hasPeople;
   if(hasPeople) setStatus("Prontos para orar","Toquem em Começar oração");
-  else setStatus("Posicionem-se diante da câmera","Até duas pessoas, com o tronco aparecendo");
+  else setStatus("Posicionem-se diante da câmera","Até seis pessoas, com o tronco aparecendo");
 }
 
 /* ===================== Armor rendering ===================== */
@@ -645,55 +651,75 @@ function frame(g, origin, up){ // eixo local: y para baixo = "down" do corpo
   g.translate(origin.x, origin.y); g.rotate(ang);
 }
 
-function drawTrack(t, cr, now, dt){
-  const B = body(t, cr), S=B.S;
-  const A = {}; for(const p of PIECES) A[p] = pieceAlpha(t,p,now);
-  const maxA = Math.max(...Object.values(A));
-  if(maxA<=.01){ drawLabel(t,B,0); return; }
+function drawAll(cr, now, dt){
   const tm = now/1000;
-
-  // luz divina atrás (sutil)
-  ctx.save(); ctx.globalCompositeOperation="lighter";
-  const hc = add(B.sm, B.up, S*.5);
-  const halo = ctx.createRadialGradient(hc.x,hc.y,0,hc.x,hc.y,S*2.2);
-  halo.addColorStop(0,`rgba(255,236,170,${.16*maxA})`); halo.addColorStop(.5,`rgba(255,214,120,${.05*maxA})`); halo.addColorStop(1,"rgba(255,214,120,0)");
-  ctx.fillStyle=halo; ctx.fillRect(hc.x-S*2.2,hc.y-S*2.2,S*4.4,S*4.4);
-  // raios
-  ctx.translate(hc.x,hc.y); ctx.rotate(tm*.05);
-  for(let i=0;i<14;i++){
-    ctx.rotate(Math.PI*2/14);
-    const g=ctx.createLinearGradient(0,0,S*2.6,0); g.addColorStop(0,`rgba(255,240,190,${.07*maxA})`); g.addColorStop(1,"rgba(255,240,190,0)");
-    ctx.fillStyle=g; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(S*2.6,-S*.07); ctx.lineTo(S*2.6,S*.07); ctx.closePath(); ctx.fill();
+  const items = [];
+  for(const t of tracks){
+    if(!t.lm) continue;
+    const B = body(t, cr);
+    const A = {}; for(const p of PIECES) A[p] = pieceAlpha(t,p,now);
+    const maxA = Math.max(...Object.values(A));
+    items.push({t,B,A,maxA});
   }
-  ctx.restore();
+  // com muita gente, a luz de fundo fica mais suave para não lavar a imagem
+  const crowd = items.filter(i=>i.maxA>.01).length;
+  const haloK = crowd>3 ? .6 : 1;
 
-  // camada da armadura
+  // 1) luz divina atrás de cada pessoa
+  for(const {B,maxA} of items){
+    if(maxA<=.01) continue;
+    const S=B.S;
+    ctx.save(); ctx.globalCompositeOperation="lighter";
+    const hc = add(B.sm, B.up, S*.5);
+    const halo = ctx.createRadialGradient(hc.x,hc.y,0,hc.x,hc.y,S*2.2);
+    halo.addColorStop(0,`rgba(255,236,170,${.16*maxA*haloK})`); halo.addColorStop(.5,`rgba(255,214,120,${.05*maxA*haloK})`); halo.addColorStop(1,"rgba(255,214,120,0)");
+    ctx.fillStyle=halo; ctx.fillRect(hc.x-S*2.2,hc.y-S*2.2,S*4.4,S*4.4);
+    ctx.translate(hc.x,hc.y); ctx.rotate(tm*.05);
+    for(let i=0;i<14;i++){
+      ctx.rotate(Math.PI*2/14);
+      const g=ctx.createLinearGradient(0,0,S*2.6,0); g.addColorStop(0,`rgba(255,240,190,${.07*maxA*haloK})`); g.addColorStop(1,"rgba(255,240,190,0)");
+      ctx.fillStyle=g; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(S*2.6,-S*.07); ctx.lineTo(S*2.6,S*.07); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // 2) todas as armaduras numa única camada (de trás para frente: quem está mais longe primeiro)
   lctx.setTransform(1,0,0,1,0,0); lctx.clearRect(0,0,W,H);
-  drawWings(lctx,B,A.wings,tm);
-  drawBoots(lctx,B,A.boots);
-  drawChest(lctx,B,A.chest);
-  drawBelt(lctx,B,A.belt);
-  drawArms(lctx,B,A.arms);
-  drawShield(lctx,B,A.shield);
-  drawHelmet(lctx,B,A.helmet);
-  // brilho especular passando (reflexo)
-  lctx.save(); lctx.globalCompositeOperation="source-atop";
-  const sweep = ((tm*.35)%1.6)-.3, sx = B.sm.x + (sweep-.5)*S*4;
-  const sg = lctx.createLinearGradient(sx-S*.6,B.sm.y-S, sx+S*.6,B.sm.y+S);
-  sg.addColorStop(0,"rgba(255,255,255,0)"); sg.addColorStop(.5,"rgba(255,255,245,.55)"); sg.addColorStop(1,"rgba(255,255,255,0)");
-  lctx.fillStyle=sg; lctx.fillRect(0,0,W,H);
-  lctx.restore();
+  let any=false, glowA=0, glowS=0;
+  const order = items.filter(i=>i.maxA>.01).sort((x,y)=>x.B.S-y.B.S);
+  for(const {B,A,maxA} of order){
+    any=true; glowA=Math.max(glowA,maxA); glowS=Math.max(glowS,B.S);
+    drawWings(lctx,B,A.wings*(crowd>3?.6:1),tm,crowd>3?7:11);
+    drawBoots(lctx,B,A.boots);
+    drawChest(lctx,B,A.chest);
+    drawBelt(lctx,B,A.belt);
+    drawArms(lctx,B,A.arms);
+    drawShield(lctx,B,A.shield);
+    drawHelmet(lctx,B,A.helmet);
+  }
+  if(any){
+    // reflexo de luz passando pelo metal (um só, atravessando a tela)
+    lctx.save(); lctx.globalCompositeOperation="source-atop";
+    const sweep = ((tm*.35)%1.6)-.3, sx = W*(sweep*1.4-.2);
+    const band = Math.max(glowS*.6, W*.08);
+    const sg = lctx.createLinearGradient(sx-band,0, sx+band,H*.35);
+    sg.addColorStop(0,"rgba(255,255,255,0)"); sg.addColorStop(.5,"rgba(255,255,245,.55)"); sg.addColorStop(1,"rgba(255,255,255,0)");
+    lctx.fillStyle=sg; lctx.fillRect(0,0,W,H);
+    lctx.restore();
+    // compõe com brilho (uma vez só para todos)
+    ctx.save();
+    if(crowd<=3){ ctx.shadowColor = `rgba(255,214,120,${.85*glowA})`; ctx.shadowBlur = Math.min(glowS*.12, 40*DPR); }
+    ctx.drawImage(layer,0,0);
+    ctx.restore();
+    ctx.save(); ctx.globalCompositeOperation="lighter"; ctx.globalAlpha=(crowd<=3?.18:.28)*glowA; ctx.drawImage(layer,0,0); ctx.restore();
+  }
 
-  // compõe com brilho
-  ctx.save();
-  ctx.shadowColor = `rgba(255,214,120,${.85*maxA})`; ctx.shadowBlur = S*.12;
-  ctx.drawImage(layer,0,0);
-  ctx.restore();
-  ctx.save(); ctx.globalCompositeOperation="lighter"; ctx.globalAlpha=.18*maxA; ctx.drawImage(layer,0,0); ctx.restore();
-
-  drawSword(ctx,B,A.sword,tm);
-  drawParticles(t,B,A,now,dt);
-  drawLabel(t,B,maxA);
+  // 3) espada, partículas e nomes
+  for(const {t,B,A,maxA} of items){
+    if(maxA>.01){ drawSword(ctx,B,A.sword,tm); drawParticles(t,B,A,now,dt); }
+    drawLabel(t,B,maxA);
+  }
+  if(particles.length>500) particles.splice(0, particles.length-500);
 }
 
 /* ---------- Capacete ---------- */
@@ -867,7 +893,7 @@ function drawShield(g,B,a){
 }
 
 /* ---------- Asas ---------- */
-function drawWings(g,B,a,tm){
+function drawWings(g,B,a,tm,nf=11){
   if(a<=.01) return;
   const {ls,rs,S,up}=B;
   const flap = Math.sin(tm*1.4)*.06;
@@ -876,8 +902,8 @@ function drawWings(g,B,a,tm){
     const base = add(add(s,out,-S*.05), up, S*.05);
     g.save(); g.translate(base.x,base.y);
     const upAng=Math.atan2(up.y,up.x), sg=(up.x*out.y-up.y*out.x)>0?1:-1;
-    for(let i=0;i<11;i++){
-      const f=i/10;
+    for(let i=0;i<nf;i++){
+      const f=i/(nf-1);
       const ang = upAng + sg*(.1 + f*(Math.PI/2+.55)) + sg*flap*(1-f);
       const len = S*(1.15 - f*.35) * (i%2?.82:1);
       const d={x:Math.cos(ang),y:Math.sin(ang)}, n={x:-d.y,y:d.x};
@@ -973,7 +999,7 @@ function drawFlashes(now){
   flashes = flashes.filter(f=>{
     const k=(now-f.start)/2600; if(k>=1 || !f.t.lm) return false;
     const cr=coverRect(); const B=body(f.t,cr); const c=L(B.sm,B.hm,.3);
-    if(!f.burst){ f.burst=true; for(let i=0;i<60;i++) particles.push({t:f.t,mode:"out",piece:"chest",life:0,max:1400+Math.random()*900,a:Math.random()*Math.PI*2,r:1+Math.random()*2.2,seed:Math.random()}); }
+    if(!f.burst){ f.burst=true; const nb = tracks.length>3 ? 30 : 60; for(let i=0;i<nb;i++) particles.push({t:f.t,mode:"out",piece:"chest",life:0,max:1400+Math.random()*900,a:Math.random()*Math.PI*2,r:1+Math.random()*2.2,seed:Math.random()}); }
     ctx.save(); ctx.globalCompositeOperation="lighter";
     const pulse = Math.sin(clamp(k*1.4)*Math.PI);
     const R=B.S*(1+k*3);
