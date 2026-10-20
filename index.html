@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#07060a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Armadura de Deus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07060a; --ink:#f6efe0; --muted:#b9ad94; --gold:#e9c46a; --gold2:#f7e2a4; --gold3:#a8741a;
+  --glass:rgba(16,13,8,.58); --line:rgba(233,196,106,.28);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;overflow:hidden;overscroll-behavior:none}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+#stage{position:fixed;inset:0}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+video{display:none}
+
+/* ---------- Intro ---------- */
+#intro{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px 24px;
+  background:radial-gradient(120% 70% at 50% 30%,#2a1f0c 0%,#0d0a06 55%,#050406 100%)}
+#intro .sigil{width:120px;height:120px;margin-bottom:22px;filter:drop-shadow(0 0 22px rgba(247,226,164,.55))}
+#intro h1{font-family:Cinzel,serif;font-weight:700;letter-spacing:.08em;font-size:clamp(30px,8vw,48px);margin:0;
+  background:linear-gradient(180deg,#fff6d6,#e9c46a 55%,#a8741a);-webkit-background-clip:text;background-clip:text;color:transparent}
+#intro p{color:var(--muted);max-width:380px;line-height:1.55;margin:14px 0 30px;font-size:15px}
+.btn-gold{position:relative;padding:16px 34px;border-radius:999px;font-weight:600;letter-spacing:.04em;color:#1b1206;
+  background:linear-gradient(180deg,#fff2c4,#e9c46a 50%,#c08a2a);box-shadow:0 0 0 1px rgba(255,240,200,.6) inset,0 10px 40px rgba(233,196,106,.35)}
+.btn-gold:active{transform:scale(.97)}
+#loadmsg{margin-top:18px;font-size:13px;color:var(--muted);min-height:18px}
+.verse{position:absolute;bottom:max(24px,env(safe-area-inset-bottom));left:24px;right:24px;font-family:Cinzel,serif;font-size:12px;letter-spacing:.12em;color:rgba(233,196,106,.55)}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;inset:0;z-index:10;pointer-events:none}
+#hud > *{pointer-events:auto}
+.top{position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;right:14px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.chip{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--line);font-size:13px}
+.brand{font-family:Cinzel,serif;letter-spacing:.1em;color:var(--gold2);font-size:13px}
+.iconbtn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--line)}
+.iconbtn svg{width:20px;height:20px;stroke:var(--gold2);fill:none;stroke-width:1.6}
+.row{display:flex;gap:8px}
+
+#status{position:absolute;top:calc(max(14px,env(safe-area-inset-top)) + 58px);left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;width:min(92vw,520px)}
+#status .t{font-family:Cinzel,serif;letter-spacing:.08em;font-size:15px;color:var(--gold2);text-shadow:0 2px 14px rgba(0,0,0,.8)}
+#status .s{font-size:12px;color:var(--muted);margin-top:4px;text-shadow:0 1px 8px rgba(0,0,0,.9)}
+
+.bottom{position:absolute;left:0;right:0;bottom:0;padding:0 16px max(18px,env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:12px;
+  background:linear-gradient(0deg,rgba(5,4,6,.75),rgba(5,4,6,0));padding-top:40px}
+#transcript{max-width:560px;text-align:center;font-size:15px;line-height:1.45;color:rgba(246,239,224,.92);text-shadow:0 1px 10px rgba(0,0,0,.95);min-height:22px;max-height:66px;overflow:hidden}
+#transcript .hl{color:var(--gold2);font-weight:600}
+#bar{width:min(86vw,420px);height:4px;border-radius:4px;background:rgba(255,255,255,.12);overflow:hidden}
+#bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#a8741a,#f7e2a4,#e9c46a);box-shadow:0 0 12px #f7e2a4;transition:width .4s}
+.controls{display:flex;align-items:center;justify-content:center;gap:14px;width:100%}
+#mainBtn{min-width:210px}
+#declBtn{padding:12px 16px;border-radius:999px;font-size:13px;background:var(--glass);border:1px solid var(--line);color:var(--gold2);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+#recBtn{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+#recBtn span{width:18px;height:18px;border-radius:50%;background:#e2533f;transition:.2s}
+#recBtn.on span{border-radius:4px;width:16px;height:16px}
+#recBtn.on{box-shadow:0 0 0 2px #e2533f}
+#recTime{position:absolute;top:calc(max(14px,env(safe-area-inset-top)) + 4px);left:50%;transform:translateX(-50%);display:none;font-size:12px;padding:6px 12px;border-radius:999px;background:rgba(226,83,63,.85);font-variant-numeric:tabular-nums}
+.hidden{display:none!important}
+
+/* ---------- Prayer guide ---------- */
+#guide{position:absolute;left:16px;right:16px;bottom:calc(max(18px,env(safe-area-inset-bottom)) + 150px);max-width:520px;margin:0 auto;padding:16px 18px;border-radius:18px;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font-size:14px;line-height:1.6;color:var(--ink);max-height:38vh;overflow:auto}
+#guide h3{margin:0 0 8px;font-family:Cinzel,serif;font-size:13px;letter-spacing:.1em;color:var(--gold2)}
+#guide b{color:var(--gold2);font-weight:600}
+
+/* ---------- Sheets / modals ---------- */
+.sheet{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55)}
+.sheet .card{width:min(100%,560px);max-height:86vh;overflow:auto;background:linear-gradient(180deg,#17120a,#0c0a07);border:1px solid var(--line);border-bottom:0;border-radius:22px 22px 0 0;padding:22px 20px max(22px,env(safe-area-inset-bottom))}
+@media (min-width:700px){.sheet{align-items:center}.sheet .card{border-radius:22px;border-bottom:1px solid var(--line)}}
+.card h2{font-family:Cinzel,serif;font-size:18px;letter-spacing:.08em;color:var(--gold2);margin:0 0 6px}
+.card .sub{color:var(--muted);font-size:13px;margin:0 0 16px;line-height:1.5}
+.person{display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;border:1px solid rgba(233,196,106,.16);margin-bottom:10px;background:rgba(255,255,255,.02)}
+.person img,.ph{width:54px;height:54px;border-radius:50%;object-fit:cover;border:1px solid var(--gold);flex:none;background:#221a0c}
+.person .info{flex:1;min-width:0}
+.person .nm{font-weight:600;font-size:15px}
+.person .meta{font-size:12px;color:var(--muted);margin-top:2px}
+.dots{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap}
+.dots i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.1)}
+.dots i.on{background:radial-gradient(circle at 35% 35%,#fff6d6,#e9c46a 60%,#a8741a);box-shadow:0 0 6px rgba(247,226,164,.7)}
+.tiny{font-size:12px;color:var(--muted);padding:6px 10px;border-radius:999px;border:1px solid rgba(233,196,106,.2)}
+.field{width:100%;padding:14px 16px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--ink);font:inherit;font-size:16px;outline:none}
+.field:focus{border-color:var(--gold)}
+.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.btn-ghost{padding:12px 18px;border-radius:999px;border:1px solid var(--line);color:var(--gold2)}
+.namehead{display:flex;gap:14px;align-items:center;margin-bottom:14px}
+.namehead img{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);box-shadow:0 0 20px rgba(233,196,106,.5)}
+#recVideo{width:100%;border-radius:14px;background:#000;max-height:56vh}
+.empty{color:var(--muted);font-size:14px;text-align:center;padding:24px 10px}
+#toast{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:50;pointer-events:none;text-align:center;opacity:0;transition:opacity .6s}
+#toast.show{opacity:1}
+#toast .a{font-family:Cinzel,serif;font-size:clamp(22px,6vw,34px);letter-spacing:.08em;color:#fff6d6;text-shadow:0 0 24px rgba(247,226,164,.95),0 0 60px rgba(233,196,106,.6)}
+#toast .b{margin-top:8px;color:var(--gold2);font-size:14px;text-shadow:0 1px 10px rgba(0,0,0,.9)}
+</style>
+</head>
+<body>
+<div id="stage">
+  <video id="vid" playsinline muted autoplay></video>
+  <canvas id="cv"></canvas>
+</div>
+
+<!-- Intro -->
+<section id="intro">
+  <svg class="sigil" viewBox="0 0 120 120" aria-hidden="true">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6d6"/><stop offset=".55" stop-color="#e9c46a"/><stop offset="1" stop-color="#a8741a"/></linearGradient></defs>
+    <path d="M60 8 L100 24 L96 66 C92 88 78 102 60 112 C42 102 28 88 24 66 L20 24 Z" fill="rgba(233,196,106,.12)" stroke="url(#g)" stroke-width="3"/>
+    <path d="M60 30 V92 M42 52 H78" stroke="url(#g)" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="60" cy="52" r="5" fill="#bfe3ff" stroke="#fff6d6" stroke-width="1.5"/>
+  </svg>
+  <h1>ARMADURA DE DEUS</h1>
+  <p>Abra a câmera, façam a oração juntos e vejam a armadura se formar. Quando declararem <b style="color:#f7e2a4">“em nome de Jesus”</b>, ela se fixa em vocês por todo o dia.</p>
+  <button class="btn-gold" id="startBtn">Abrir a câmera</button>
+  <div id="loadmsg"></div>
+  <div class="verse">REVESTI-VOS DE TODA A ARMADURA DE DEUS · EFÉSIOS 6</div>
+</section>
+
+<!-- HUD -->
+<section id="hud" class="hidden">
+  <div class="top">
+    <div class="chip brand">✦ ARMADURA</div>
+    <div class="row">
+      <button class="iconbtn" id="guideBtn" title="Oração guia"><svg viewBox="0 0 24 24"><path d="M4 5h11a3 3 0 0 1 3 3v12H7a3 3 0 0 1-3-3z"/><path d="M8 9h6M8 13h6"/></svg></button>
+      <button class="iconbtn" id="peopleBtn" title="Guerreiros"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"/><path d="M12 8v8M9 11h6"/></svg></button>
+      <button class="iconbtn" id="flipBtn" title="Trocar câmera"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><path d="M9 13a3 3 0 0 1 5-2l1 1M15 14a3 3 0 0 1-5 2l-1-1"/></svg></button>
+    </div>
+  </div>
+  <div id="recTime">● 00:00</div>
+  <div id="status"><div class="t" id="stT">Posicionem-se diante da câmera</div><div class="s" id="stS">Até duas pessoas, com o tronco aparecendo</div></div>
+
+  <div id="guide" class="hidden">
+    <h3>ORAÇÃO GUIA</h3>
+    Senhor Deus, hoje nos revestimos da Tua armadura.<br>
+    Coloca em nós o <b>capacete</b> da salvação, para guardar nossa mente.<br>
+    A <b>couraça</b> da justiça, para proteger nosso coração.<br>
+    O <b>cinto</b> da verdade, para andarmos firmes.<br>
+    Nos pés, a prontidão do <b>evangelho da paz</b>.<br>
+    Nas mãos, o <b>escudo</b> da fé e a <b>espada</b> do Espírito, que é a Tua Palavra.<br>
+    Manda Teus anjos para nos guardar hoje.<br>
+    Declaramos que Jesus Cristo é nosso único e verdadeiro Salvador.<br>
+    <b>Eu declaro, em nome de Jesus. Amém!</b>
+  </div>
+
+  <div class="bottom">
+    <div id="transcript"></div>
+    <div id="bar"><i></i></div>
+    <div class="controls">
+      <button id="recBtn" title="Gravar"><span></span></button>
+      <button class="btn-gold" id="mainBtn">Começar oração</button>
+      <button id="declBtn" class="hidden" title="Declarar manualmente">✦ Declarar</button>
+    </div>
+  </div>
+</section>
+
+<!-- People sheet -->
+<section class="sheet hidden" id="peopleSheet">
+  <div class="card">
+    <h2>Guerreiros</h2>
+    <p class="sub">Quem já orou neste aparelho. Os pontos dourados mostram os dias em que a armadura foi selada (últimos 14 dias).</p>
+    <div id="peopleList"></div>
+    <div class="actions">
+      <button class="btn-ghost" id="wipeBtn">Apagar tudo</button>
+      <button class="btn-gold" data-close>Fechar</button>
+    </div>
+  </div>
+</section>
+
+<!-- Name sheet -->
+<section class="sheet hidden" id="nameSheet">
+  <div class="card">
+    <div class="namehead"><img id="nameImg" alt=""><div><h2>Novo guerreiro</h2><p class="sub" style="margin:0">A armadura foi selada. Qual é o nome deste guerreiro?</p></div></div>
+    <input class="field" id="nameInput" placeholder="Nome" autocomplete="off" maxlength="30">
+    <div class="actions"><button class="btn-gold" id="nameOk">Salvar</button></div>
+  </div>
+</section>
+
+<!-- Recording sheet -->
+<section class="sheet hidden" id="recSheet">
+  <div class="card">
+    <h2>Gravação</h2>
+    <p class="sub">Guarde este momento.</p>
+    <video id="recVideo" controls playsinline></video>
+    <div class="actions">
+      <button class="btn-ghost" data-close>Fechar</button>
+      <a class="btn-ghost" id="recDl" download>Baixar</a>
+      <button class="btn-gold" id="recShare">Compartilhar</button>
+    </div>
+  </div>
+</section>
+
+<div id="toast"><div class="a" id="toastA"></div><div class="b" id="toastB"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/dist/face-api.js"></script>
+<script type="module">
+import { FilesetResolver, PoseLandmarker } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+
+/* ===================== Config ===================== */
+const FACE_MODELS = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model/";
+const MP_WASM = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
+const POSE_MODEL = "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task";
+const MATCH_DIST = 0.5;          // distância facial para reconhecer a mesma pessoa
+const PRE_CAP = 0.8;             // quanto a armadura forma antes da declaração
+const STORE_KEY = "armadura.v1";
+const PIECES = ["wings","chest","arms","belt","helmet","boots","shield","sword"];
+const KEYWORDS = {
+  helmet:["capacete","salvacao","mente","pensamentos","cabeca"],
+  chest:["couraca","justica","coracao","peito"],
+  belt:["cinto","verdade","cintura"],
+  boots:["calcados","calcado","pes","paz","evangelho","caminhos","caminho"],
+  shield:["escudo","fe","protecao","proteja","protege","guarda"],
+  sword:["espada","espirito","palavra"],
+  arms:["forca","forte","fortes","bracos","maos","coragem"],
+  wings:["anjos","anjo","asas","ceu","ceus","gloria"],
+};
+const ALL_BOOST = ["armadura","reveste","revista","revestir","revestimos","revesti","senhor","deus","pai"];
+const DECLARE_RE = /(em nome de jesus|eu declaro|declaro|declaramos|unico e verdadeiro salvador|unico salvador|verdadeiro salvador|senhor e salvador|unico e suficiente salvador)/;
+
+/* ===================== Elements ===================== */
+const $ = id => document.getElementById(id);
+const video = $("vid"), cv = $("cv"), ctx = cv.getContext("2d");
+const layer = document.createElement("canvas"), lctx = layer.getContext("2d");
+const today = () => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+
+/* ===================== Storage ===================== */
+function loadDB(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || {people:[]}; }catch(e){ return {people:[]}; } }
+function saveDB(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(db)); }catch(e){ console.warn(e); } }
+let db = loadDB();
+const personById = id => db.people.find(p=>p.id===id);
+const hasToday = p => p && p.days.includes(today());
+
+/* ===================== State ===================== */
+let poseLm = null, facesReady = false, mirror = true, facing = "user", stream = null;
+let tracks = [], nextTrackId = 1, lastVideoTime = -1;
+const session = { active:false, done:false, declaring:false, declT:0,
+  target:Object.fromEntries(PIECES.map(p=>[p,0])), shown:Object.fromEntries(PIECES.map(p=>[p,0])),
+  finalText:"", interim:"", wordsDone:0 };
+let particles = [], flashes = [];
+let W=0,H=0,DPR=1;
+
+/* ===================== Intro / boot ===================== */
+$("startBtn").onclick = async () => {
+  $("startBtn").disabled = true;
+  try{
+    msg("Abrindo a câmera…");
+    await openCamera();
+    msg("Preparando a armadura…");
+    await loadPose();
+    $("intro").classList.add("hidden"); $("hud").classList.remove("hidden");
+    requestAnimationFrame(loop);
+    loadFaces().catch(e=>console.warn("faces",e));
+  }catch(e){
+    console.error(e);
+    msg("Não foi possível iniciar: "+(e.message||e)+". Verifique a permissão da câmera e se o endereço é https.");
+    $("startBtn").disabled = false;
+  }
+};
+function msg(t){ $("loadmsg").textContent = t; }
+
+async function openCamera(){
+  if(stream) stream.getTracks().forEach(t=>t.stop());
+  stream = await navigator.mediaDevices.getUserMedia({ audio:false, video:{ facingMode:facing, width:{ideal:1280}, height:{ideal:720} } });
+  video.srcObject = stream; mirror = facing==="user";
+  await video.play();
+  await new Promise(r=>{ if(video.videoWidth) r(); else video.onloadedmetadata = r; });
+}
+async function loadPose(){
+  const fs = await FilesetResolver.forVisionTasks(MP_WASM);
+  const opts = d => ({ baseOptions:{ modelAssetPath:POSE_MODEL, delegate:d }, runningMode:"VIDEO", numPoses:2,
+    minPoseDetectionConfidence:.5, minPosePresenceConfidence:.5, minTrackingConfidence:.5 });
+  try{ poseLm = await PoseLandmarker.createFromOptions(fs, opts("GPU")); }
+  catch(e){ poseLm = await PoseLandmarker.createFromOptions(fs, opts("CPU")); }
+}
+async function loadFaces(){
+  const f = window.faceapi; if(!f) return;
+  await f.tf.setBackend("webgl").catch(()=>{}); await f.tf.ready();
+  await Promise.all([ f.nets.tinyFaceDetector.loadFromUri(FACE_MODELS), f.nets.faceLandmark68TinyNet.loadFromUri(FACE_MODELS), f.nets.faceRecognitionNet.loadFromUri(FACE_MODELS) ]);
+  facesReady = true; faceLoop();
+}
+$("flipBtn").onclick = async () => { facing = facing==="user" ? "environment" : "user"; try{ await openCamera(); lastVideoTime=-1; tracks=[]; }catch(e){ facing = facing==="user"?"environment":"user"; } };
+
+/* ===================== Geometry helpers ===================== */
+function resize(){
+  DPR = Math.min(window.devicePixelRatio||1, 1.6);
+  W = Math.round(innerWidth*DPR); H = Math.round(innerHeight*DPR);
+  cv.width = W; cv.height = H; layer.width = W; layer.height = H;
+}
+addEventListener("resize", resize); resize();
+function coverRect(){
+  const vw=video.videoWidth||1, vh=video.videoHeight||1, s=Math.max(W/vw,H/vh);
+  return { s, dw:vw*s, dh:vh*s, ox:(W-vw*s)/2, oy:(H-vh*s)/2 };
+}
+function toC(p, cr){ return { x: cr.ox + (mirror?1-p.x:p.x)*cr.dw, y: cr.oy + p.y*cr.dh, v:p.v }; }
+const lerp=(a,b,t)=>a+(b-a)*t;
+const L=(a,b,t)=>({x:lerp(a.x,b.x,t),y:lerp(a.y,b.y,t)});
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const add=(a,v,k=1)=>({x:a.x+v.x*k,y:a.y+v.y*k});
+const norm=v=>{const l=Math.hypot(v.x,v.y)||1;return{x:v.x/l,y:v.y/l};};
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+
+/* ===================== Tracking ===================== */
+function updateTracks(results, now){
+  const poses = (results && results.landmarks) || [];
+  const used = new Set();
+  for(const lms of poses){
+    const anchor = { x:(lms[11].x+lms[12].x)/2, y:(lms[11].y+lms[12].y)/2 };
+    let best=null, bd=.25;
+    for(const t of tracks){ if(used.has(t)) continue; const d=dist(anchor,t.anchor); if(d<bd){bd=d;best=t;} }
+    if(!best){ best = { id:nextTrackId++, lm:null, anchor, personId:null, descs:[], born:now, fixedSince:0, thumb:null, sealedHere:false }; tracks.push(best); }
+    used.add(best);
+    const k = best.lm ? .55 : 1;
+    best.lm = lms.map((p,i)=>{ const o = best.lm ? best.lm[i] : p; const v=p.visibility??1;
+      return { x:lerp(o.x,p.x,k), y:lerp(o.y,p.y,k), v:lerp(o.v??v,v,.5) }; });
+    best.anchor = anchor; best.lastSeen = now;
+  }
+  tracks = tracks.filter(t => now - t.lastSeen < 900);
+}
+
+/* ===================== Face recognition ===================== */
+let faceBusy=false;
+async function faceLoop(){
+  if(!facesReady) return;
+  if(!faceBusy && tracks.length && video.readyState>=2){
+    faceBusy = true;
+    try{
+      const f = window.faceapi;
+      const dets = await f.detectAllFaces(video, new f.TinyFaceDetectorOptions({ inputSize:320, scoreThreshold:.5 })).withFaceLandmarks(true).withFaceDescriptors();
+      const vw=video.videoWidth, vh=video.videoHeight;
+      for(const d of dets){
+        const b = d.detection.box;
+        const cx=(b.x+b.width/2)/vw, cy=(b.y+b.height/2)/vh, r=Math.max(b.width/vw,b.height/vh);
+        let best=null, bd=r*1.1;
+        for(const t of tracks){ if(!t.lm) continue; const n=t.lm[0]; const dd=Math.hypot(n.x-cx,n.y-cy); if(dd<bd){bd=dd;best=t;} }
+        if(!best) continue;
+        best.descs.push(Array.from(d.descriptor)); if(best.descs.length>6) best.descs.shift();
+        best.thumb = cropThumb(b);
+        identify(best, d.descriptor);
+      }
+    }catch(e){ console.warn(e); }
+    faceBusy = false;
+  }
+  setTimeout(faceLoop, 650);
+}
+function identify(t, desc){
+  let best=null, bd=MATCH_DIST;
+  for(const p of db.people){ for(const q of p.descriptors){ let s=0; for(let i=0;i<128;i++){ const z=desc[i]-q[i]; s+=z*z; } const d=Math.sqrt(s); if(d<bd){bd=d;best=p;} } }
+  if(best && t.personId!==best.id){
+    t.personId = best.id;
+    if(hasToday(best) && !t.fixedSince){ t.fixedSince = performance.now(); chime(.5); }
+  }
+  if(t.pendingSeal){ sealTrack(t); }
+}
+function cropThumb(b){
+  const c=document.createElement("canvas"); c.width=c.height=96; const g=c.getContext("2d");
+  const pad=b.width*.35, s=Math.max(b.width,b.height)+pad*2;
+  if(mirror){ g.translate(96,0); g.scale(-1,1); }
+  g.drawImage(video, b.x+b.width/2-s/2, b.y+b.height/2-s/2, s, s, 0,0,96,96);
+  return c.toDataURL("image/jpeg",.75);
+}
+
+/* ===================== Speech ===================== */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec=null, wantListen=false;
+const normTxt = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z\s]/g," ").replace(/\s+/g," ").trim();
+function startListening(){
+  if(!SR){ setStatus("Fale a oração em voz alta","Este navegador não reconhece voz — use o botão ✦ Declarar no final"); return; }
+  wantListen = true;
+  rec = new SR(); rec.lang="pt-BR"; rec.continuous=true; rec.interimResults=true;
+  rec.onresult = e => {
+    let interim="";
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const r=e.results[i];
+      if(r.isFinal) session.finalText += " " + r[0].transcript; else interim += " " + r[0].transcript;
+    }
+    session.interim = interim; onSpeech();
+  };
+  rec.onerror = e => { if(e.error==="not-allowed"||e.error==="service-not-allowed"){ wantListen=false; setStatus("Microfone bloqueado","Permita o microfone ou use o botão ✦ Declarar"); } };
+  rec.onend = () => { if(wantListen) setTimeout(()=>{ try{ rec.start(); }catch(_){} }, 250); };
+  try{ rec.start(); }catch(_){}
+}
+function stopListening(){ wantListen=false; try{ rec && rec.stop(); }catch(_){} }
+
+function onSpeech(){
+  if(!session.active || session.declaring || session.done) return;
+  const full = normTxt(session.finalText + " " + session.interim);
+  const words = full ? full.split(" ") : [];
+  for(let i=session.wordsDone; i<words.length; i++){
+    const w = words[i];
+    for(const p of PIECES) session.target[p] = Math.min(PRE_CAP, session.target[p] + .013);
+    if(ALL_BOOST.includes(w)) for(const p of PIECES) session.target[p] = Math.min(PRE_CAP, session.target[p] + .03);
+    for(const p in KEYWORDS) if(KEYWORDS[p].includes(w)){ session.target[p] = Math.min(PRE_CAP, session.target[p] + .24); spawnBurst(p); }
+  }
+  session.wordsDone = Math.max(session.wordsDone, words.length);
+  // transcript (últimas palavras)
+  const raw = (session.finalText + " " + session.interim).trim().split(/\s+/).slice(-16).join(" ");
+  $("transcript").innerHTML = highlight(raw);
+  if(DECLARE_RE.test(full)) declare();
+}
+function highlight(s){
+  const esc = s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  return esc.replace(/(em nome de jesus|declaro|declaramos|salvador|jesus)/gi,'<span class="hl">$1</span>');
+}
+
+/* ===================== Prayer flow ===================== */
+$("mainBtn").onclick = () => {
+  if(session.done){ resetSession(); return; }
+  if(!session.active){ beginPrayer(); } else { endPrayer(); }
+};
+$("declBtn").onclick = () => declare();
+function beginPrayer(){
+  session.active = true; session.done=false; session.finalText=""; session.interim=""; session.wordsDone=0;
+  for(const p of PIECES){ session.target[p]=.04; }
+  $("mainBtn").textContent = "Encerrar"; $("declBtn").classList.remove("hidden");
+  $("transcript").textContent = "";
+  setStatus("Orem em voz alta","A armadura vai se formando a cada palavra");
+  initAudio(); startListening();
+}
+function endPrayer(){ stopListening(); resetSession(); }
+function resetSession(){
+  session.active=false; session.done=false; session.declaring=false;
+  for(const p of PIECES){ session.target[p]=0; }
+  $("mainBtn").textContent = "Começar oração"; $("declBtn").classList.add("hidden"); $("transcript").textContent="";
+  setStatus("Posicionem-se diante da câmera","Até duas pessoas, com o tronco aparecendo");
+}
+function declare(){
+  if(!session.active || session.declaring || session.done) return;
+  session.declaring = true; session.declT = performance.now();
+  for(const p of PIECES) session.target[p] = 1;
+  stopListening();
+  chime(1);
+  for(const t of tracks) if(t.lm) flashes.push({ t, start:performance.now() });
+  showToast("EM NOME DE JESUS", "A armadura está sendo selada…");
+  setStatus("✦ Selando a armadura ✦","");
+  setTimeout(finishDeclare, 2600);
+}
+function finishDeclare(){
+  session.declaring=false; session.done=true;
+  const now = performance.now();
+  const visible = tracks.filter(t=>t.lm);
+  for(const t of visible){ t.fixedSince = now - 5000; t.sealedHere = true; sealTrack(t); }
+  saveDB();
+  $("declBtn").classList.add("hidden"); $("mainBtn").textContent = "Nova oração";
+  showToast("ARMADURA SELADA", "Fixa em vocês por todo o dia de hoje");
+  setStatus("Revestidos da armadura de Deus","Ela aparece sempre que forem vistos hoje");
+  queueNaming();
+}
+function sealTrack(t){
+  const day = today();
+  if(t.personId){
+    const p = personById(t.personId);
+    if(p){ if(!p.days.includes(day)) p.days.push(day); for(const d of t.descs) p.descriptors.push(d); p.descriptors = p.descriptors.slice(-12); if(t.thumb && !p.thumb) p.thumb=t.thumb; t.pendingSeal=false; saveDB(); return; }
+  }
+  if(!t.descs.length){ t.pendingSeal = true; return; }  // aguarda o rosto ser lido
+  const p = { id:"p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6), name:"", thumb:t.thumb, descriptors:t.descs.slice(), days:[day] };
+  db.people.push(p); t.personId = p.id; t.pendingSeal=false; saveDB();
+  namingQueue.push(p.id); if(!session.declaring) queueNaming();
+}
+
+/* ===================== Naming ===================== */
+const namingQueue=[]; let naming=false;
+function queueNaming(){
+  if(naming) return; const id = namingQueue.shift(); if(!id) return;
+  const p = personById(id); if(!p || p.name) return queueNaming();
+  naming = true;
+  $("nameImg").src = p.thumb || ""; $("nameInput").value = "";
+  setTimeout(()=>{ $("nameSheet").classList.remove("hidden"); }, 1800);
+  $("nameOk").onclick = () => { p.name = $("nameInput").value.trim() || "Guerreiro"; saveDB(); $("nameSheet").classList.add("hidden"); naming=false; queueNaming(); };
+}
+
+/* ===================== People sheet ===================== */
+$("peopleBtn").onclick = () => { renderPeople(); $("peopleSheet").classList.remove("hidden"); };
+document.querySelectorAll("[data-close]").forEach(b=>b.onclick = () => b.closest(".sheet").classList.add("hidden"));
+$("wipeBtn").onclick = () => { if(confirm("Apagar todos os guerreiros e registros deste aparelho?")){ db={people:[]}; saveDB(); tracks.forEach(t=>{t.personId=null;t.fixedSince=0;}); renderPeople(); } };
+function streak(p){ let n=0; const d=new Date(); for(;;){ const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); if(p.days.includes(k)){n++; d.setDate(d.getDate()-1);} else break; } return n; }
+function renderPeople(){
+  const el = $("peopleList");
+  if(!db.people.length){ el.innerHTML = '<div class="empty">Ninguém ainda. Façam a primeira oração e declarem em nome de Jesus.</div>'; return; }
+  el.innerHTML = "";
+  for(const p of db.people){
+    const row = document.createElement("div"); row.className="person";
+    const dots = []; const d=new Date(); d.setDate(d.getDate()-13);
+    for(let i=0;i<14;i++){ const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); dots.push(`<i class="${p.days.includes(k)?"on":""}"></i>`); d.setDate(d.getDate()+1); }
+    const s = streak(p);
+    row.innerHTML = `${p.thumb?`<img src="${p.thumb}" alt="">`:'<div class="ph"></div>'}
+      <div class="info"><div class="nm"></div><div class="meta">${hasToday(p)?"✦ Armadura de hoje selada":"Ainda não orou hoje"} · ${p.days.length} dia(s)${s>1?` · ${s} dias seguidos`:""}</div><div class="dots">${dots.join("")}</div></div>
+      <div class="row" style="flex-direction:column"><button class="tiny" data-a="ren">Nome</button><button class="tiny" data-a="del">Remover</button></div>`;
+    row.querySelector(".nm").textContent = p.name || "Sem nome";
+    row.querySelector('[data-a="ren"]').onclick = () => { const n = prompt("Nome do guerreiro:", p.name||""); if(n!==null){ p.name=n.trim(); saveDB(); renderPeople(); } };
+    row.querySelector('[data-a="del"]').onclick = () => { if(confirm("Remover "+(p.name||"este guerreiro")+"?")){ db.people = db.people.filter(x=>x!==p); saveDB(); tracks.forEach(t=>{ if(t.personId===p.id){t.personId=null;t.fixedSince=0;} }); renderPeople(); } };
+    el.appendChild(row);
+  }
+}
+
+/* ===================== Guide ===================== */
+$("guideBtn").onclick = () => $("guide").classList.toggle("hidden");
+
+/* ===================== UI helpers ===================== */
+function setStatus(t,s){ $("stT").textContent=t; $("stS").textContent=s||""; }
+let toastTimer;
+function showToast(a,b){ $("toastA").textContent=a; $("toastB").textContent=b; $("toast").classList.add("show"); clearTimeout(toastTimer); toastTimer=setTimeout(()=>$("toast").classList.remove("show"), 2400); }
+
+/* ===================== Audio (sino suave) ===================== */
+let actx=null;
+function initAudio(){ try{ actx = actx || new (window.AudioContext||window.webkitAudioContext)(); actx.resume(); }catch(_){} }
+function chime(intensity=1){
+  if(!actx) return; const t0 = actx.currentTime;
+  const notes = intensity>.8 ? [523.25,659.25,783.99,1046.5,1318.5] : [783.99,1174.66];
+  notes.forEach((f,i)=>{
+    const o=actx.createOscillator(), g=actx.createGain(); o.type="sine"; o.frequency.value=f;
+    const st=t0+i*.09; g.gain.setValueAtTime(0,st); g.gain.linearRampToValueAtTime(.08*intensity,st+.02); g.gain.exponentialRampToValueAtTime(.0001,st+2.6);
+    o.connect(g); g.connect(recDest ? recMix : actx.destination); if(recDest) g.connect(actx.destination);
+    o.start(st); o.stop(st+2.7);
+  });
+}
+
+/* ===================== Recording ===================== */
+let mediaRec=null, recChunks=[], recStart=0, recTimer=null, recDest=null, recMix=null, micStream=null, lastBlob=null;
+$("recBtn").onclick = async () => {
+  if(mediaRec && mediaRec.state==="recording"){ mediaRec.stop(); return; }
+  initAudio();
+  const vs = cv.captureStream(30); const tracksOut=[...vs.getVideoTracks()];
+  try{
+    micStream = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:true, noiseSuppression:true } });
+    recDest = actx.createMediaStreamDestination(); recMix = actx.createGain(); recMix.connect(recDest);
+    actx.createMediaStreamSource(micStream).connect(recMix);
+    tracksOut.push(...recDest.stream.getAudioTracks());
+  }catch(e){ console.warn("sem áudio", e); }
+  const types = ["video/mp4;codecs=avc1,mp4a","video/mp4","video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"];
+  const mt = types.find(t=>window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || "";
+  try{ mediaRec = new MediaRecorder(new MediaStream(tracksOut), mt?{mimeType:mt, videoBitsPerSecond:5e6}:undefined); }
+  catch(e){ alert("Este navegador não permite gravar a tela."); return; }
+  recChunks=[]; mediaRec.ondataavailable = e => e.data.size && recChunks.push(e.data);
+  mediaRec.onstop = () => {
+    clearInterval(recTimer); $("recTime").style.display="none"; $("recBtn").classList.remove("on");
+    if(micStream) micStream.getTracks().forEach(t=>t.stop()); micStream=null; recDest=null; recMix=null;
+    lastBlob = new Blob(recChunks, { type: mediaRec.mimeType || "video/webm" });
+    const url = URL.createObjectURL(lastBlob); const ext = lastBlob.type.includes("mp4")?"mp4":"webm";
+    $("recVideo").src = url; $("recDl").href = url; $("recDl").download = `armadura-${today()}.${ext}`;
+    $("recSheet").classList.remove("hidden");
+    // se a oração estava ativa, retoma a escuta (alguns celulares pausam o reconhecimento durante a gravação)
+    if(session.active && !session.done && !session.declaring && wantListen===false && SR) startListening();
+  };
+  mediaRec.start(500); recStart=Date.now(); $("recBtn").classList.add("on"); $("recTime").style.display="block";
+  recTimer = setInterval(()=>{ const s=Math.floor((Date.now()-recStart)/1000); $("recTime").textContent = "● "+String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0"); }, 500);
+};
+$("recShare").onclick = async () => {
+  if(!lastBlob) return; const ext = lastBlob.type.includes("mp4")?"mp4":"webm";
+  const file = new File([lastBlob], `armadura-${today()}.${ext}`, { type:lastBlob.type });
+  if(navigator.canShare && navigator.canShare({ files:[file] })){ try{ await navigator.share({ files:[file], title:"Armadura de Deus" }); }catch(_){} }
+  else $("recDl").click();
+};
+
+/* ===================== Particles ===================== */
+function spawnBurst(piece){
+  for(const t of tracks){ if(!t.lm) continue; for(let i=0;i<14;i++) particles.push({ t, mode:"in", piece, life:0, max:900+Math.random()*700, a:Math.random()*Math.PI*2, r:1.6+Math.random()*1.4, seed:Math.random() }); }
+}
+
+/* ===================== Main loop ===================== */
+let lastT = performance.now();
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt = Math.min(64, now-lastT); lastT = now;
+  if(poseLm && video.readyState>=2 && video.currentTime!==lastVideoTime){
+    lastVideoTime = video.currentTime;
+    try{ updateTracks(poseLm.detectForVideo(video, now), now); }catch(e){}
+  }
+  // suaviza progresso da sessão
+  const sp = session.declaring ? .06 : .035;
+  for(const p of PIECES) session.shown[p] += (session.target[p]-session.shown[p]) * sp * (dt/16);
+  const avg = PIECES.reduce((s,p)=>s+session.shown[p],0)/PIECES.length;
+  $("bar").firstElementChild.style.width = (session.active ? avg*100 : 0) + "%";
+
+  // vídeo
+  const cr = coverRect();
+  ctx.save(); ctx.clearRect(0,0,W,H);
+  if(mirror){ ctx.translate(W,0); ctx.scale(-1,1); }
+  ctx.drawImage(video, cr.ox, cr.oy, cr.dw, cr.dh);
+  ctx.restore();
+
+  if(!session.active && !tracks.some(t=>t.fixedSince)){
+    if(!tracks.length) setStatusIdle(false); else setStatusIdle(true);
+  }
+
+  for(const t of tracks) if(t.lm) drawTrack(t, cr, now, dt);
+  drawFlashes(now);
+}
+let idleShown=null;
+function setStatusIdle(hasPeople){
+  if(session.active || session.done) return;
+  if(idleShown===hasPeople) return; idleShown=hasPeople;
+  if(hasPeople) setStatus("Prontos para orar","Toquem em Começar oração");
+  else setStatus("Posicionem-se diante da câmera","Até duas pessoas, com o tronco aparecendo");
+}
+
+/* ===================== Armor rendering ===================== */
+function pieceAlpha(t, piece, now){
+  if(t.fixedSince){ const k = clamp((now - t.fixedSince)/1600); return ease(k); }
+  if(session.active && !session.done) return clamp(session.shown[piece]);
+  return 0;
+}
+function body(t, cr){
+  const P = i => toC(t.lm[i], cr);
+  const ls=P(11), rs=P(12);
+  const S = Math.max(dist(ls,rs), 40*DPR);
+  const sm = L(ls,rs,.5);
+  let lh=P(23), rh=P(24);
+  const ear7=P(7), ear8=P(8), nose=P(0);
+  const headC = L(ear7,ear8,.5);
+  let up = norm({ x: headC.x - sm.x, y: headC.y - sm.y });
+  if(!isFinite(up.x) || up.y>0) up={x:0,y:-1};
+  const down = {x:-up.x,y:-up.y};
+  if(lh.v<.35 || rh.v<.35 || dist(L(lh,rh,.5),sm) < S*.6){ lh = add(ls,down,S*1.35); rh = add(rs,down,S*1.35); }
+  return { P, ls, rs, lh, rh, S, sm, up, down, headC, nose, ear7, ear8, hm:L(lh,rh,.5) };
+}
+
+function goldGrad(g, x0,y0,x1,y1){
+  const gr = g.createLinearGradient(x0,y0,x1,y1);
+  gr.addColorStop(0,"#fff8d8"); gr.addColorStop(.28,"#f6d98a"); gr.addColorStop(.55,"#dcaa45"); gr.addColorStop(.8,"#b07a22"); gr.addColorStop(1,"#f3d27a");
+  return gr;
+}
+function plate(g, path, a, S, gradBox, opts={}){
+  if(a<=.01) return;
+  const fillA = Math.pow(a,1.6) * (opts.fill ?? .74), lineA = clamp(a*1.7);
+  g.save();
+  g.globalAlpha = fillA; g.fillStyle = opts.fillStyle || goldGrad(g, ...gradBox); g.fill(path);
+  g.globalAlpha = lineA; g.lineJoin="round"; g.strokeStyle = opts.stroke || "#fff1c2"; g.lineWidth = Math.max(1.4, S*.014); g.stroke(path);
+  g.globalAlpha = lineA*.6; g.strokeStyle = "rgba(120,72,10,.9)"; g.lineWidth = Math.max(.8,S*.005); g.stroke(path);
+  g.restore();
+}
+function gem(g, x,y,r,a){
+  if(a<=.01) return;
+  g.save(); g.globalAlpha=clamp(a*1.3);
+  const gr=g.createRadialGradient(x-r*.3,y-r*.35,r*.1,x,y,r);
+  gr.addColorStop(0,"#ffffff"); gr.addColorStop(.35,"#bfe6ff"); gr.addColorStop(1,"#3d74c9");
+  g.beginPath(); g.ellipse(x,y,r*.75,r,0,0,Math.PI*2); g.fillStyle=gr; g.fill();
+  g.lineWidth=Math.max(1,r*.18); g.strokeStyle="#fff1c2"; g.stroke();
+  g.restore();
+}
+function frame(g, origin, up){ // eixo local: y para baixo = "down" do corpo
+  const ang = Math.atan2(up.y, up.x) + Math.PI/2;
+  g.translate(origin.x, origin.y); g.rotate(ang);
+}
+
+function drawTrack(t, cr, now, dt){
+  const B = body(t, cr), S=B.S;
+  const A = {}; for(const p of PIECES) A[p] = pieceAlpha(t,p,now);
+  const maxA = Math.max(...Object.values(A));
+  if(maxA<=.01){ drawLabel(t,B,0); return; }
+  const tm = now/1000;
+
+  // luz divina atrás (sutil)
+  ctx.save(); ctx.globalCompositeOperation="lighter";
+  const hc = add(B.sm, B.up, S*.5);
+  const halo = ctx.createRadialGradient(hc.x,hc.y,0,hc.x,hc.y,S*2.2);
+  halo.addColorStop(0,`rgba(255,236,170,${.16*maxA})`); halo.addColorStop(.5,`rgba(255,214,120,${.05*maxA})`); halo.addColorStop(1,"rgba(255,214,120,0)");
+  ctx.fillStyle=halo; ctx.fillRect(hc.x-S*2.2,hc.y-S*2.2,S*4.4,S*4.4);
+  // raios
+  ctx.translate(hc.x,hc.y); ctx.rotate(tm*.05);
+  for(let i=0;i<14;i++){
+    ctx.rotate(Math.PI*2/14);
+    const g=ctx.createLinearGradient(0,0,S*2.6,0); g.addColorStop(0,`rgba(255,240,190,${.07*maxA})`); g.addColorStop(1,"rgba(255,240,190,0)");
+    ctx.fillStyle=g; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(S*2.6,-S*.07); ctx.lineTo(S*2.6,S*.07); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+
+  // camada da armadura
+  lctx.setTransform(1,0,0,1,0,0); lctx.clearRect(0,0,W,H);
+  drawWings(lctx,B,A.wings,tm);
+  drawBoots(lctx,B,A.boots);
+  drawChest(lctx,B,A.chest);
+  drawBelt(lctx,B,A.belt);
+  drawArms(lctx,B,A.arms);
+  drawShield(lctx,B,A.shield);
+  drawHelmet(lctx,B,A.helmet);
+  // brilho especular passando (reflexo)
+  lctx.save(); lctx.globalCompositeOperation="source-atop";
+  const sweep = ((tm*.35)%1.6)-.3, sx = B.sm.x + (sweep-.5)*S*4;
+  const sg = lctx.createLinearGradient(sx-S*.6,B.sm.y-S, sx+S*.6,B.sm.y+S);
+  sg.addColorStop(0,"rgba(255,255,255,0)"); sg.addColorStop(.5,"rgba(255,255,245,.55)"); sg.addColorStop(1,"rgba(255,255,255,0)");
+  lctx.fillStyle=sg; lctx.fillRect(0,0,W,H);
+  lctx.restore();
+
+  // compõe com brilho
+  ctx.save();
+  ctx.shadowColor = `rgba(255,214,120,${.85*maxA})`; ctx.shadowBlur = S*.12;
+  ctx.drawImage(layer,0,0);
+  ctx.restore();
+  ctx.save(); ctx.globalCompositeOperation="lighter"; ctx.globalAlpha=.18*maxA; ctx.drawImage(layer,0,0); ctx.restore();
+
+  drawSword(ctx,B,A.sword,tm);
+  drawParticles(t,B,A,now,dt);
+  drawLabel(t,B,maxA);
+}
+
+/* ---------- Capacete ---------- */
+function drawHelmet(g,B,a){
+  if(a<=.01 || B.nose.v<.4) return;
+  const r = Math.max(dist(B.ear7,B.ear8)*.62, B.S*.26);
+  const c = add(B.headC, B.up, r*.12);
+  g.save(); frame(g,c,B.up);
+  const p = new Path2D();
+  p.moveTo(-r*.98, r*.62);
+  p.bezierCurveTo(-r*1.22, r*.1, -r*1.25,-r*.55, -r*.78,-r*1.02);
+  p.bezierCurveTo(-r*.38,-r*1.38, r*.38,-r*1.38, r*.78,-r*1.02);
+  p.bezierCurveTo(r*1.25,-r*.55, r*1.22, r*.1, r*.98, r*.62);
+  p.lineTo(r*.62, r*.78);
+  p.bezierCurveTo(r*.66, r*.2, r*.6,-r*.45, 0,-r*.66);
+  p.bezierCurveTo(-r*.6,-r*.45,-r*.66, r*.2,-r*.62, r*.78);
+  p.closePath();
+  plate(g,p,a,B.S,[-r,-r*1.3,r,r*.8]);
+  // crista central e gravuras
+  if(a>.05){
+    g.globalAlpha=clamp(a*1.5); g.strokeStyle="#fff1c2"; g.lineWidth=Math.max(1,B.S*.008);
+    g.beginPath(); g.moveTo(0,-r*.7); g.quadraticCurveTo(0,-r*1.2,0,-r*1.32); g.stroke();
+    g.beginPath(); g.moveTo(-r*.85,-r*.55); g.quadraticCurveTo(-r*.5,-r*.9,-r*.15,-r*.82); g.moveTo(r*.85,-r*.55); g.quadraticCurveTo(r*.5,-r*.9,r*.15,-r*.82); g.stroke();
+  }
+  // asinhas laterais
+  for(const s of [-1,1]){
+    const w = new Path2D();
+    w.moveTo(s*r*1.05,-r*.25);
+    w.bezierCurveTo(s*r*1.5,-r*.55, s*r*1.75,-r*1.15, s*r*1.6,-r*1.55);
+    w.bezierCurveTo(s*r*1.45,-r*1.1, s*r*1.3,-r*.85, s*r*1.12,-r*.7);
+    w.bezierCurveTo(s*r*1.35,-r*.9, s*r*1.42,-r*1.1, s*r*1.38,-r*1.25);
+    w.bezierCurveTo(s*r*1.2,-r*.85, s*r*1.1,-r*.6, s*r*1.05,-r*.25);
+    plate(g,w,a,B.S,[0,-r*1.6,s*r*1.7,0]);
+  }
+  gem(g,0,-r*.82,r*.11,a);
+  g.restore();
+}
+
+/* ---------- Couraça ---------- */
+function drawChest(g,B,a){
+  if(a<=.01) return;
+  const {ls,rs,lh,rh,S,up,down} = B;
+  const nl = add(L(ls,rs,.32), up, S*.05), nr = add(L(ls,rs,.68), up, S*.05);
+  const sl = L(ls,rs,.06), sr = L(ls,rs,.94);
+  const al = L(L(ls,lh,.38), L(rs,rh,.38), .05), ar = L(L(ls,lh,.38), L(rs,rh,.38), .95);
+  const wl = L(L(ls,lh,.86), L(rs,rh,.86), .12), wr = L(L(ls,lh,.86), L(rs,rh,.86), .88);
+  const bot = add(L(lh,rh,.5), down, S*.04);
+  const collar = add(L(ls,rs,.5), down, S*.14);
+  const p = new Path2D();
+  p.moveTo(nl.x,nl.y); p.lineTo(sl.x,sl.y);
+  p.quadraticCurveTo(al.x,al.y, wl.x,wl.y);
+  p.quadraticCurveTo(L(wl,bot,.5).x + down.x*S*.08, L(wl,bot,.5).y + down.y*S*.08, bot.x,bot.y);
+  p.quadraticCurveTo(L(wr,bot,.5).x + down.x*S*.08, L(wr,bot,.5).y + down.y*S*.08, wr.x,wr.y);
+  p.quadraticCurveTo(ar.x,ar.y, sr.x,sr.y);
+  p.lineTo(nr.x,nr.y); p.quadraticCurveTo(collar.x,collar.y, nl.x,nl.y);
+  p.closePath();
+  const box=[ls.x,ls.y-S*.2,rh.x,rh.y];
+  plate(g,p,a,S,box,{fill:.68});
+  if(a>.04){
+    g.save(); g.globalAlpha=clamp(a*1.5); g.strokeStyle="#fff1c2"; g.lineWidth=Math.max(1,S*.008); g.lineCap="round";
+    const c0=add(collar,down,S*.02), mid=L(collar,bot,.5);
+    // peitorais
+    const pl=L(L(ls,lh,.42),L(rs,rh,.42),.2), pr=L(L(ls,lh,.42),L(rs,rh,.42),.8);
+    g.beginPath(); g.moveTo(sl.x+(nl.x-sl.x)*.4, sl.y+(nl.y-sl.y)*.4+S*.05); g.quadraticCurveTo(pl.x,pl.y+S*.08, mid.x,mid.y-S*.08);
+    g.moveTo(sr.x+(nr.x-sr.x)*.4, sr.y+(nr.y-sr.y)*.4+S*.05); g.quadraticCurveTo(pr.x,pr.y+S*.08, mid.x,mid.y-S*.08); g.stroke();
+    // placas do abdômen
+    for(const k of [.68,.82]){
+      const l=L(L(ls,lh,k),L(rs,rh,k),.2), r=L(L(ls,lh,k),L(rs,rh,k),.8), m=add(L(l,r,.5),down,S*.05);
+      g.beginPath(); g.moveTo(l.x,l.y); g.quadraticCurveTo(m.x,m.y,r.x,r.y); g.stroke();
+    }
+    g.beginPath(); g.moveTo(mid.x,mid.y); g.lineTo(bot.x,bot.y); g.stroke();
+    g.restore();
+    // cruz luminosa
+    const cc = L(c0, bot, .26), cs=S*.17;
+    g.save(); frame(g,cc,up);
+    const cross = new Path2D();
+    const w=cs*.22;
+    cross.rect(-w/2,-cs*.75,w,cs*1.6); cross.rect(-cs*.52,-cs*.3,cs*1.04,w);
+    g.globalAlpha=clamp(a*1.3); g.fillStyle=goldGrad(g,0,-cs,0,cs); g.fill(cross);
+    g.strokeStyle="#fff8de"; g.lineWidth=Math.max(1,S*.006); g.stroke(cross);
+    g.restore();
+    gem(g,cc.x - up.x*0 , cc.y, S*.045, a);
+  }
+}
+
+/* ---------- Ombreiras + braçadeiras ---------- */
+function drawArms(g,B,a){
+  if(a<=.01) return;
+  const {P,S} = B;
+  for(const [sh,el,wr,side] of [[11,13,15,1],[12,14,16,-1]]){
+    const s=P(sh), e=P(el), w=P(wr);
+    if(s.v<.4) continue;
+    const dir = norm({x:e.x-s.x,y:e.y-s.y});
+    const out = norm({x:s.x-(side>0?P(12):P(11)).x, y:s.y-(side>0?P(12):P(11)).y});
+    // ombreira em 3 lâminas
+    for(let k=2;k>=0;k--){
+      const c = add(add(s,out,S*.06), dir, S*(.02+k*.09));
+      g.save(); g.translate(c.x,c.y); g.rotate(Math.atan2(dir.y,dir.x)-Math.PI/2);
+      const wv=S*(.3-k*.035), hv=S*(.17-k*.015);
+      const pth=new Path2D();
+      pth.moveTo(-wv*.55,-hv*.2); pth.bezierCurveTo(-wv*.55,-hv*1.1, wv*.55,-hv*1.1, wv*.55,-hv*.2);
+      pth.quadraticCurveTo(wv*.4,hv*.75,0,hv); pth.quadraticCurveTo(-wv*.4,hv*.75,-wv*.55,-hv*.2); pth.closePath();
+      plate(g,pth,a,S,[-wv,-hv,wv,hv]);
+      g.restore();
+    }
+    // braçadeira (antebraço)
+    if(e.v>.5 && w.v>.5){
+      const d=norm({x:w.x-e.x,y:w.y-e.y}), n={x:-d.y,y:d.x};
+      const e2=add(e,d,S*.06), w2=add(w,d,-S*.03);
+      const pth=new Path2D();
+      pth.moveTo(e2.x+n.x*S*.1,e2.y+n.y*S*.1); pth.lineTo(w2.x+n.x*S*.075,w2.y+n.y*S*.075);
+      pth.lineTo(w2.x-n.x*S*.075,w2.y-n.y*S*.075); pth.lineTo(e2.x-n.x*S*.1,e2.y-n.y*S*.1); pth.closePath();
+      plate(g,pth,a,S,[e2.x,e2.y,w2.x,w2.y]);
+      g.save(); g.globalAlpha=clamp(a*1.4); g.strokeStyle="#fff1c2"; g.lineWidth=Math.max(1,S*.006);
+      for(const k of [.3,.62]){ const m=L(e2,w2,k); g.beginPath(); g.moveTo(m.x+n.x*S*.09,m.y+n.y*S*.09); g.lineTo(m.x-n.x*S*.09,m.y-n.y*S*.09); g.stroke(); }
+      g.restore();
+    }
+  }
+}
+
+/* ---------- Cinto ---------- */
+function drawBelt(g,B,a){
+  if(a<=.01) return;
+  const {ls,rs,lh,rh,S,down}=B;
+  const l=L(L(ls,lh,.9),L(rs,rh,.9),.1), r=L(L(ls,lh,.9),L(rs,rh,.9),.9), h=S*.055;
+  const c=add(L(l,r,.5),down,S*.03);
+  const p=new Path2D();
+  p.moveTo(l.x-down.x*h,l.y-down.y*h); p.quadraticCurveTo(c.x-down.x*h,c.y-down.y*h, r.x-down.x*h,r.y-down.y*h);
+  p.lineTo(r.x+down.x*h,r.y+down.y*h); p.quadraticCurveTo(c.x+down.x*h,c.y+down.y*h, l.x+down.x*h,l.y+down.y*h); p.closePath();
+  plate(g,p,a,S,[l.x,l.y-h,r.x,r.y+h],{fill:.82});
+  // fivela
+  g.save(); frame(g,c,B.up);
+  const bk=new Path2D(); const bw=S*.12;
+  bk.moveTo(0,-bw); bk.lineTo(bw*.9,0); bk.lineTo(0,bw); bk.lineTo(-bw*.9,0); bk.closePath();
+  plate(g,bk,a,S,[-bw,-bw,bw,bw],{fill:.9});
+  g.restore();
+  gem(g,c.x,c.y,S*.04,a);
+}
+
+/* ---------- Grevas / calçados ---------- */
+function drawBoots(g,B,a){
+  if(a<=.01) return;
+  const {P,S}=B;
+  for(const [kn,an] of [[25,27],[26,28]]){
+    const k=P(kn), n=P(an); if(k.v<.55 || n.v<.55) continue;
+    const d=norm({x:n.x-k.x,y:n.y-k.y}), nn={x:-d.y,y:d.x};
+    const k2=add(k,d,-S*.04), n2=add(n,d,S*.08);
+    const p=new Path2D();
+    p.moveTo(k2.x+nn.x*S*.13,k2.y+nn.y*S*.13); p.lineTo(n2.x+nn.x*S*.1,n2.y+nn.y*S*.1);
+    p.lineTo(n2.x-nn.x*S*.1,n2.y-nn.y*S*.1); p.lineTo(k2.x-nn.x*S*.13,k2.y-nn.y*S*.13); p.closePath();
+    plate(g,p,a,S,[k2.x,k2.y,n2.x,n2.y]);
+    const kc=new Path2D(); kc.arc(k.x,k.y,S*.1,0,Math.PI*2); plate(g,kc,a,S,[k.x-S*.1,k.y-S*.1,k.x+S*.1,k.y+S*.1]);
+  }
+}
+
+/* ---------- Escudo da fé ---------- */
+function drawShield(g,B,a){
+  if(a<=.01) return;
+  const {P,S}=B; const e=P(13), w=P(15);
+  if(e.v<.6 || w.v<.6) return;
+  const c=L(e,w,.55), r=S*.34;
+  const outward = norm({x:P(11).x-P(12).x, y:P(11).y-P(12).y});
+  const cc = add(c,outward,S*.12);
+  g.save(); g.translate(cc.x,cc.y);
+  const p=new Path2D(); p.moveTo(0,-r); p.bezierCurveTo(r*.9,-r*.9,r*.95,-r*.2,r*.85,r*.15); p.quadraticCurveTo(r*.6,r*.8,0,r*1.1); p.quadraticCurveTo(-r*.6,r*.8,-r*.85,r*.15); p.bezierCurveTo(-r*.95,-r*.2,-r*.9,-r*.9,0,-r); p.closePath();
+  plate(g,p,a*.85,S,[-r,-r,r,r],{fill:.5});
+  g.globalAlpha=clamp(a*1.3); g.strokeStyle="#fff1c2"; g.lineWidth=Math.max(1.2,S*.016); g.lineCap="round";
+  g.beginPath(); g.moveTo(0,-r*.65); g.lineTo(0,r*.75); g.moveTo(-r*.45,-r*.12); g.lineTo(r*.45,-r*.12); g.stroke();
+  g.restore();
+  gem(g,cc.x,cc.y-r*.12,S*.035,a);
+}
+
+/* ---------- Asas ---------- */
+function drawWings(g,B,a,tm){
+  if(a<=.01) return;
+  const {ls,rs,S,up}=B;
+  const flap = Math.sin(tm*1.4)*.06;
+  for(const [s,side] of [[ls,1],[rs,-1]]){
+    const out = norm({x:(side>0?ls.x-rs.x:rs.x-ls.x), y:(side>0?ls.y-rs.y:rs.y-ls.y)});
+    const base = add(add(s,out,-S*.05), up, S*.05);
+    g.save(); g.translate(base.x,base.y);
+    const upAng=Math.atan2(up.y,up.x), sg=(up.x*out.y-up.y*out.x)>0?1:-1;
+    for(let i=0;i<11;i++){
+      const f=i/10;
+      const ang = upAng + sg*(.1 + f*(Math.PI/2+.55)) + sg*flap*(1-f);
+      const len = S*(1.15 - f*.35) * (i%2?.82:1);
+      const d={x:Math.cos(ang),y:Math.sin(ang)}, n={x:-d.y,y:d.x};
+      const tip=add({x:0,y:0},d,len), mid=add({x:0,y:0},d,len*.5);
+      const wd=S*.12;
+      const p=new Path2D(); p.moveTo(0,0);
+      p.quadraticCurveTo(mid.x+n.x*wd,mid.y+n.y*wd, tip.x,tip.y);
+      p.quadraticCurveTo(mid.x-n.x*wd,mid.y-n.y*wd, 0,0); p.closePath();
+      g.globalAlpha = Math.pow(a,1.4)*.32; const gr=g.createLinearGradient(0,0,tip.x,tip.y); gr.addColorStop(0,"#fffaf0"); gr.addColorStop(1,"rgba(200,225,255,.6)");
+      g.fillStyle=gr; g.fill(p);
+      g.globalAlpha = clamp(a*1.2)*.6; g.strokeStyle="#ffffff"; g.lineWidth=Math.max(.8,S*.004); g.stroke(p);
+    }
+    g.restore();
+  }
+}
+
+/* ---------- Espada do Espírito ---------- */
+function drawSword(g,B,a,tm){
+  if(a<=.01) return;
+  const {P,S}=B; const e=P(14), w=P(16); const ix=P(20);
+  if(e.v<.6 || w.v<.6) return;
+  const hand = L(w, ix.v>.5?ix:w, .5);
+  const d = norm({x:w.x-e.x,y:w.y-e.y}), n={x:-d.y,y:d.x};
+  const len = S*1.35*clamp(a*1.25), bw=S*.05;
+  const b0 = add(hand,d,S*.06), tip=add(b0,d,len);
+  g.save(); g.globalCompositeOperation="lighter";
+  // aura
+  g.globalAlpha=.35*a; g.strokeStyle="rgba(255,230,160,1)"; g.lineCap="round"; g.lineWidth=bw*3.2; g.shadowColor="#ffe2a0"; g.shadowBlur=S*.15;
+  g.beginPath(); g.moveTo(b0.x,b0.y); g.lineTo(tip.x,tip.y); g.stroke();
+  g.shadowBlur=0;
+  // lâmina
+  const p=new Path2D();
+  p.moveTo(b0.x+n.x*bw,b0.y+n.y*bw); p.lineTo(tip.x-d.x*S*.12+n.x*bw*.8,tip.y-d.y*S*.12+n.y*bw*.8); p.lineTo(tip.x,tip.y);
+  p.lineTo(tip.x-d.x*S*.12-n.x*bw*.8,tip.y-d.y*S*.12-n.y*bw*.8); p.lineTo(b0.x-n.x*bw,b0.y-n.y*bw); p.closePath();
+  const gr=g.createLinearGradient(b0.x+n.x*bw,b0.y+n.y*bw,b0.x-n.x*bw,b0.y-n.y*bw); gr.addColorStop(0,"rgba(255,240,200,.5)"); gr.addColorStop(.5,"rgba(255,255,255,.95)"); gr.addColorStop(1,"rgba(255,240,200,.5)");
+  g.globalAlpha=clamp(a*1.1); g.fillStyle=gr; g.fill(p);
+  g.restore();
+  // guarda dourada
+  g.save();
+  const gp=new Path2D(); const gw=S*.2, gh=S*.035;
+  gp.moveTo(b0.x+n.x*gw,b0.y+n.y*gw); gp.lineTo(b0.x+n.x*gw+d.x*gh,b0.y+n.y*gw+d.y*gh); gp.lineTo(b0.x-n.x*gw+d.x*gh,b0.y-n.y*gw+d.y*gh); gp.lineTo(b0.x-n.x*gw,b0.y-n.y*gw); gp.closePath();
+  plate(g,gp,a,S,[b0.x-gw,b0.y,b0.x+gw,b0.y+gh],{fill:.95});
+  g.restore();
+  gem(g,b0.x+d.x*gh*.5,b0.y+d.y*gh*.5,S*.03,a);
+}
+
+/* ---------- Partículas ---------- */
+function anchorFor(B,piece){
+  switch(piece){
+    case "helmet": return add(B.headC,B.up,B.S*.15);
+    case "belt": return L(B.lh,B.rh,.5);
+    case "boots": return add(L(B.lh,B.rh,.5),B.down,B.S*1.2);
+    case "shield": return L(B.P(13),B.P(15),.5);
+    case "sword": return B.P(16);
+    case "arms": return Math.random()<.5?B.ls:B.rs;
+    case "wings": return add(B.sm,B.up,B.S*.4);
+    default: return L(B.sm,B.hm,.35);
+  }
+}
+function drawParticles(t,B,A,now,dt){
+  const S=B.S, building = session.active && !session.done && !t.fixedSince;
+  // partículas ambiente: convergindo enquanto forma, cintilando quando fixa
+  const rate = building ? .35 : (t.fixedSince ? .12 : 0);
+  if(Math.random()<rate*dt/16){
+    const pieces = PIECES.filter(p=>A[p]>.05); const pc = pieces[Math.floor(Math.random()*pieces.length)] || "chest";
+    particles.push({ t, mode: building?"in":"tw", piece:pc, life:0, max:building?1100:1400, a:Math.random()*Math.PI*2, r:1.4+Math.random()*1.4, seed:Math.random(), off:{x:(Math.random()-.5)*S*.6,y:(Math.random()-.5)*S*.6} });
+  }
+  ctx.save(); ctx.globalCompositeOperation="lighter";
+  particles = particles.filter(p=>{
+    if(p.t!==t) return true;
+    p.life += dt; const k=p.life/p.max; if(k>=1) return false;
+    const target = anchorFor(B,p.piece);
+    let x,y,al;
+    if(p.mode==="in"){ const rr=S*p.r*(1-ease(k)); x=target.x+Math.cos(p.a)*rr; y=target.y+Math.sin(p.a)*rr; al=Math.sin(k*Math.PI); }
+    else if(p.mode==="out"){ const rr=S*p.r*ease(k); x=target.x+Math.cos(p.a)*rr; y=target.y+Math.sin(p.a)*rr; al=1-k; }
+    else { x=target.x+(p.off?.x||0); y=target.y+(p.off?.y||0)-k*S*.15; al=Math.sin(k*Math.PI)*.8; }
+    star(ctx,x,y,S*(.018+p.seed*.02),al);
+    return true;
+  });
+  ctx.restore();
+}
+function star(g,x,y,r,a){
+  g.globalAlpha=clamp(a);
+  const gr=g.createRadialGradient(x,y,0,x,y,r*3); gr.addColorStop(0,"rgba(255,250,225,1)"); gr.addColorStop(.3,"rgba(255,220,140,.6)"); gr.addColorStop(1,"rgba(255,220,140,0)");
+  g.fillStyle=gr; g.fillRect(x-r*3,y-r*3,r*6,r*6);
+  g.fillStyle="rgba(255,255,240,.95)";
+  g.beginPath(); g.moveTo(x,y-r*2.4); g.lineTo(x+r*.35,y); g.lineTo(x,y+r*2.4); g.lineTo(x-r*.35,y); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(x-r*2.4,y); g.lineTo(x,y+r*.35); g.lineTo(x+r*2.4,y); g.lineTo(x,y-r*.35); g.closePath(); g.fill();
+}
+
+/* ---------- Clarão da declaração ---------- */
+function drawFlashes(now){
+  flashes = flashes.filter(f=>{
+    const k=(now-f.start)/2600; if(k>=1 || !f.t.lm) return false;
+    const cr=coverRect(); const B=body(f.t,cr); const c=L(B.sm,B.hm,.3);
+    if(!f.burst){ f.burst=true; for(let i=0;i<60;i++) particles.push({t:f.t,mode:"out",piece:"chest",life:0,max:1400+Math.random()*900,a:Math.random()*Math.PI*2,r:1+Math.random()*2.2,seed:Math.random()}); }
+    ctx.save(); ctx.globalCompositeOperation="lighter";
+    const pulse = Math.sin(clamp(k*1.4)*Math.PI);
+    const R=B.S*(1+k*3);
+    const g=ctx.createRadialGradient(c.x,c.y,0,c.x,c.y,R); g.addColorStop(0,`rgba(255,250,230,${.55*pulse})`); g.addColorStop(.4,`rgba(255,220,140,${.25*pulse})`); g.addColorStop(1,"rgba(255,220,140,0)");
+    ctx.fillStyle=g; ctx.fillRect(c.x-R,c.y-R,R*2,R*2);
+    // anel
+    ctx.globalAlpha=(1-k)*.8; ctx.strokeStyle="#fff1c2"; ctx.lineWidth=B.S*.02*(1-k);
+    ctx.beginPath(); ctx.arc(c.x,c.y,B.S*(.4+k*2.6),0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+    return true;
+  });
+}
+
+/* ---------- Nome sobre a cabeça ---------- */
+function drawLabel(t,B,a){
+  const p = t.personId && personById(t.personId); if(!p || !p.name) return;
+  const sealed = hasToday(p);
+  const r = Math.max(dist(B.ear7,B.ear8)*.62, B.S*.26);
+  const pos = add(B.headC, B.up, r*1.9 + B.S*.1);
+  ctx.save();
+  ctx.font = `600 ${Math.round(13*DPR)}px Inter, sans-serif`; ctx.textAlign="center"; ctx.textBaseline="middle";
+  const txt = (sealed?"✦ ":"")+p.name;
+  const w = ctx.measureText(txt).width + 22*DPR, h=26*DPR;
+  ctx.globalAlpha=.9; ctx.fillStyle="rgba(16,13,8,.6)"; ctx.strokeStyle=sealed?"rgba(247,226,164,.8)":"rgba(255,255,255,.3)"; ctx.lineWidth=1*DPR;
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(pos.x-w/2,pos.y-h/2,w,h,h/2) : ctx.rect(pos.x-w/2,pos.y-h/2,w,h); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = sealed ? "#f7e2a4" : "#f6efe0"; ctx.fillText(txt,pos.x,pos.y+1);
+  ctx.restore();
+}
+
+// Nota: armadura do dia é reconhecida por pessoa; vira o dia à meia-noite (horário do aparelho).
+</script>
+</body>
+</html>
